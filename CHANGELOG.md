@@ -1,0 +1,69 @@
+# Version History
+
+Generated from Resources/ReleaseHistory.json; the root Info.plist is the single source of truth for the current version and build numbers. Record dates are not necessarily remote release dates.
+
+## 0.3.0 (Build 3) · 2026-10-24
+
+UI refresh, large-file categories and Trash-first cleanup
+
+Rebuilds the main interface and product icon, groups large files into nine type categories with filters, and routes all everyday cleanup to the system Trash.
+
+- Refreshed mint-green visual system, sidebar branding, disk overview and file details; the product icon shows categorized folders and space partitions with full-size ICNS.
+- Large files gain nine categories — video, audio, images & design, documents, archives, installers & images, development & data, virtual machines, other — with counts and logical sizes.
+- Combined category and path search filters, size threshold, size/mtime/name sorting, selection and select-all of current results; CSV export includes the file kind.
+- The large-files, duplicates, cleanup and uninstall pages remove permanent-delete entry points; the default and underlying API both prefer the Trash and never fall back to direct deletion when a move fails.
+- The system trashItem API is used everywhere; metadata is re-read before cleanup, with unified APFS resource-identity resolution and stronger mtime checks.
+- If uninstalling an app bundle fails, its associated leftovers are kept untouched; partial failures are reported clearly. Moved files disappear from large-file and duplicate results, and directory stats prompt a rescan.
+- Scan candidates now satisfy independent thresholds for large files and duplicate detection; new tests cover categories, combined filters, APFS identity, stale snapshots, failure retention and real Trash restoration.
+
+Usage notes:
+
+- Categories only affect viewing and filtering — files are never moved automatically; unknown types fall back to Other based on extension and system type declarations.
+- Trashed items can be restored from Finder; space is not freed immediately. Directory stats come from the scan snapshot and need a rescan to update.
+- An explicit permanent-delete API remains in the core layer for existing callers; the everyday UI offers no permanent-delete entry point.
+- This release is a local build; ad-hoc signed without Developer ID notarization or remote distribution.
+
+## 0.2.0 (Build 2) · 2026-10-24
+
+App uninstaller, orphan cleanup, update checks and incremental hashing
+
+Adds app uninstall with leftover search, reverse orphan lookup, software update checks, APFS snapshot hints, a treemap space view and a SQLite hash cache.
+
+- New app uninstaller: parses bundle metadata from /Applications and system locations to list every app; system and Apple apps are explicitly protected, and running apps quit before uninstalling.
+- Leftover search uses an identifier cache with two sensitivity levels: bundle IDs and version-stripped names match fixed Library locations after normalization; Containers are attributed precisely via container metadata, with caches and logs checked by default.
+- New orphan cleanup: reverse-enumerates the user Library's top level against every installed app's identifiers and lists unowned entries as candidates; system prefixes are excluded and results are labeled heuristic.
+- New software update checks: two real sources — Sparkle self-update feeds (RSS appcast parsing) and the App Store's public lookup; apps without a source are honestly labeled, and network requests happen only on user action.
+- Duplicate detection gains a SQLite hash cache: full digests persisted under path/size/mtime keys make rescans of unchanged files zero-read; stale keys are pruned after each scan.
+- New space view: squarified treemap layout with cushion highlighting where area equals real directory size, with click-to-drill and breadcrumb navigation.
+- Disk overview gains an APFS local snapshot and purgeable-space card: parses real tmutil output and estimates purgeable space; deleting snapshots needs admin rights — the app never escalates and points to the system entry instead.
+- Sidebar groups Disk / Apps / General; uninstall and orphan cleanup both confirm twice, stating recoverability and scope.
+
+Usage notes:
+
+- Leftover and orphan judgments are name-match heuristics (containers are exact metadata attribution); confirm each selection before deleting.
+- Update checks only cover apps that declare a Sparkle feed or come from the App Store; everything else shows "no update source", which does not mean it is current.
+- The hash cache lives in ~/Library/Application Support/cduyzhFileClean/ and stores only digests and file metadata keys — never file contents.
+- Snapshot deletion and /Library system-level leftovers need admin rights; the app never escalates and explains why or links to the right tool.
+- The treemap is not cleanup advice — it only visualizes the real size distribution.
+
+## 0.1.0 (Build 1) · 2026-10-24
+
+Disk space organizer, duplicate files and large files
+
+Scans the user directory and disk volumes, organizes space usage from real file data, detects duplicate files and space hogs, and offers Trash-first safe deletion.
+
+- New disk overview: per-volume capacity and usage, a home-directory scan aggregating real file sizes into an expandable directory tree with shares.
+- New directory organizer: recursively enumerates file metadata (size, mtime), skips symlinks and unreadable paths, and lists inaccessible directories explicitly instead of pretending they are empty.
+- New duplicate detection: a three-tier pipeline — size grouping → sampled hashing → full SHA-256 — counting hard links once by physical blocks and presenting APFS clones as regular content duplicates.
+- New large-file finder: sorted by real file size with size and mtime filters, showing path, size and last-accessed info.
+- New safe deletion: moves to the recoverable Trash by default, permanent deletion only by explicit choice; every path is re-checked to exist before deletion, and system locations and non-writable paths are protected.
+- The UI follows the cduyzh native design standards: sidebar navigation, panel-based layout, monospace numerals, light/dark appearances and a detail panel.
+- Includes version history, build-source verification, local installation and release packaging scripts, consistent with the rest of the family.
+
+Usage notes:
+
+- Scanning and statistics are read-only; files are only moved or deleted after explicit confirmation.
+- The sampled-hash stage reads the first segment of each file; full hashing runs only on same-size candidates. Results state their evidence level.
+- Trash deletion depends on Finder access; permanent deletion is unrecoverable and the confirmation dialog restates total count and size.
+- No admin escalation; directories blocked by SIP or TCC are marked unreadable, never shown as empty.
+- No online update source is configured yet; this release uses the local build, install and distribution flow.
